@@ -112,7 +112,7 @@ class CompilerExtension extends Extension
         $compiler->autoload(function (string $type) use ($config) {
             $files = (array)$config->get(RepositoryInterface::KEY_AUTOLOAD_FILES, []);
 
-            foreach ($files as $file) {
+            foreach (\array_unique($files) as $file) {
                 $files[\pathinfo($file, \PATHINFO_FILENAME)] = $file;
             }
 
@@ -136,8 +136,8 @@ class CompilerExtension extends Extension
                 (array)$config->get(RepositoryInterface::KEY_AUTOLOAD_EXTENSIONS, []),
             ];
 
-            foreach ($paths as $path) {
-                foreach ($extensions as $extension) {
+            foreach (\array_unique($paths) as $path) {
+                foreach (\array_unique($extensions) as $extension) {
                     $pathname = $path . '/' . $type . '.' . $extension;
 
                     if (\is_file($pathname)) {
@@ -169,7 +169,7 @@ class CompilerExtension extends Extension
 
             $autoload = (array)$config->get(RepositoryInterface::KEY_AUTOLOAD_EXTENSIONS, []);
 
-            foreach ($autoload as $extension) {
+            foreach (\array_unique($autoload) as $extension) {
                 $pathname = \dirname($file->getPathname()) . '/' . $type . '.' . $extension;
 
                 if (\is_file($pathname)) {
