@@ -41,7 +41,10 @@ class ObjectBuilder extends Builder
             $fields = [];
 
             foreach ($this->reflection->getFields() as $field) {
-                $fields[$field->getName()] = $this->buildType($field);
+                $built = $this->buildType($field);
+                if ($built) {
+                    $fields[$field->getName()] = $built;
+                }
             }
 
             return $fields;
