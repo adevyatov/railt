@@ -135,7 +135,7 @@ class PassedArgumentsValidator extends BaseDefinitionValidator
      */
     private function validateMissingArgument(HasPassedArguments $invocation, ArgumentDefinition $argument): void
     {
-        if (! $invocation->hasPassedArgument($argument->getName())) {
+        if ($argument->isNonNull() && ! $invocation->hasPassedArgument($argument->getName())) {
             $error = \sprintf('Required argument "%s" of %s not specified', $argument, $argument->getParent());
 
             throw new TypeConflictException($error, $this->getCallStack());
