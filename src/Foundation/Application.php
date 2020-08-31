@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of Railt package.
  *
@@ -11,6 +12,7 @@ namespace Railt\Foundation;
 
 use Phplrt\Io\Readable;
 use Psr\Container\ContainerInterface as PSRContainer;
+use Psr\SimpleCache\CacheInterface as PsrCacheInterface;
 use Railt\Container\Container;
 use Railt\Container\ContainerInterface;
 use Railt\Container\Exception\ContainerInvocationException;
@@ -28,6 +30,7 @@ use Railt\Foundation\Event\EventsExtension;
 use Railt\Foundation\Extension\Repository as ExtensionRepository;
 use Railt\Foundation\Extension\RepositoryInterface as ExtensionRepositoryInterface;
 use Railt\Foundation\Webonyx\WebonyxExtension;
+use Symfony\Component\Cache\Psr16Cache;
 
 /**
  * Class Application
@@ -56,31 +59,66 @@ class Application extends Container implements ApplicationInterface
     private $booted = false;
 
     /**
+     * @var PsrCacheInterface|null
+     */
+    private ?PsrCacheInterface $cache;
+
+    /**
      * Application constructor.
      *
-     * @param bool $debug
+     * @param bool              $debug
      * @param PSRContainer|null $container
+     * @param PsrCacheInterface $cache
      * @throws ContainerInvocationException
      * @throws ContainerResolutionException
      * @throws ParameterResolutionException
-     * @throws \Railt\Io\Exception\NotReadableException
      * @throws \ReflectionException
      */
-    public function __construct(bool $debug = false, PSRContainer $container = null)
+    public function __construct(bool $debug = false, PSRContainer $container = null, PsrCacheInterface $cache = null)
     {
         parent::__construct($container);
+        $this->cache = $cache;
 
         $this->registerBaseBindings($debug);
+        $this->registerCache($debug);
+    }
+
+    /**
+     * @param string $extension
+     * @throws ContainerInvocationException
+     * @throws ContainerResolutionException
+     * @throws ParameterResolutionException
+     * @return ApplicationInterface|$this
+     */
+    public function extend(string $extension): ProvidesExtensions
+    {
+        $extensions = $this->make(ExtensionRepositoryInterface::class);
+        $extensions->add($extension);
+
+        return $this;
+    }
+
+    /**
+     * @param Readable $schema
+     * @throws ContainerInvocationException
+     * @throws ContainerResolutionException
+     * @throws ParameterResolutionException
+     * @return ConnectionInterface
+     */
+    public function connect(Readable $schema): ConnectionInterface
+    {
+        $this->bootExtensions($this->make(ExtensionRepositoryInterface::class));
+
+        return new Connection($this, $schema);
     }
 
     /**
      * @param bool $debug
-     * @return void
      * @throws ContainerInvocationException
      * @throws ContainerResolutionException
      * @throws ParameterResolutionException
-     * @throws \Railt\Io\Exception\NotReadableException
      * @throws \ReflectionException
+     * @return void
      */
     private function registerBaseBindings(bool $debug): void
     {
@@ -101,9 +139,8 @@ class Application extends Container implements ApplicationInterface
 
     /**
      * @param bool $debug
-     * @return void
-     * @throws \Railt\Io\Exception\NotReadableException
      * @throws \ReflectionException
+     * @return void
      */
     private function registerConfigsRepository(bool $debug): void
     {
@@ -124,10 +161,10 @@ class Application extends Container implements ApplicationInterface
     }
 
     /**
-     * @return void
      * @throws ContainerInvocationException
      * @throws ContainerResolutionException
      * @throws ParameterResolutionException
+     * @return void
      */
     private function registerExtensionsRepository(): void
     {
@@ -157,35 +194,6 @@ class Application extends Container implements ApplicationInterface
     }
 
     /**
-     * @param string $extension
-     * @return ApplicationInterface|$this
-     * @throws ContainerInvocationException
-     * @throws ContainerResolutionException
-     * @throws ParameterResolutionException
-     */
-    public function extend(string $extension): ProvidesExtensions
-    {
-        $extensions = $this->make(ExtensionRepositoryInterface::class);
-        $extensions->add($extension);
-
-        return $this;
-    }
-
-    /**
-     * @param Readable $schema
-     * @return ConnectionInterface
-     * @throws ContainerInvocationException
-     * @throws ContainerResolutionException
-     * @throws ParameterResolutionException
-     */
-    public function connect(Readable $schema): ConnectionInterface
-    {
-        $this->bootExtensions($this->make(ExtensionRepositoryInterface::class));
-
-        return new Connection($this, $schema);
-    }
-
-    /**
      * @param ExtensionRepositoryInterface $extensions
      * @throws ContainerInvocationException
      * @throws ContainerResolutionException
@@ -196,5 +204,12 @@ class Application extends Container implements ApplicationInterface
         $this->loadExtensions($extensions);
 
         $extensions->boot();
+    }
+
+    private function registerCache(bool $isDebug): void
+    {
+        if (!$isDebug && $this->cache) {
+            $this->instance(PsrCacheInterface::class, $this->cache);
+        }
     }
 }
