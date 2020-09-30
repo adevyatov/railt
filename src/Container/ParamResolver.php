@@ -128,8 +128,8 @@ class ParamResolver
     {
         $name = '$' . $parameter->getName();
 
-        return $this->resolveParameterByName($name, $additional, function () use ($parameter) {
-            return $this->resolveDefault($parameter);
+        return $this->resolveParameterByName($name, $additional, function () use ($parameter, $additional) {
+            return $this->resolveDefault($parameter, $additional);
         });
     }
 
@@ -139,7 +139,7 @@ class ParamResolver
      * @throws ParameterResolutionException
      * @throws \ReflectionException
      */
-    private function resolveDefault(\ReflectionParameter $parameter)
+    private function resolveDefault(\ReflectionParameter $parameter, array $additional)
     {
         if ($parameter->isOptional()) {
             return $parameter->getDefaultValue();
@@ -147,6 +147,14 @@ class ParamResolver
 
         if ($parameter->allowsNull() && $parameter->hasType()) {
             return null;
+        }
+
+        // interface or inheritance
+        $name = $parameter->getType()->getName();
+        foreach ($additional as $additional) {
+            if ($additional instanceof $name) {
+                return $additional;
+            }
         }
 
         throw $this->parameterError($parameter);
