@@ -49,6 +49,14 @@ class Context implements ContextInterface
     }
 
     /**
+     * @return FieldDefinition
+     */
+    public function getField(): FieldDefinition
+    {
+        return $this->field;
+    }
+
+    /**
      * @return TypeDefinition
      */
     public function getType(): TypeDefinition

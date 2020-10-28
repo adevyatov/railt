@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Railt\Extension\Normalization\Context;
 
 use Railt\SDL\Contracts\Definitions\TypeDefinition;
+use Railt\SDL\Contracts\Dependent\FieldDefinition;
 
 /**
  * Interface ContextInterface
@@ -20,6 +21,11 @@ interface ContextInterface
      * @return TypeDefinition
      */
     public function getType(): TypeDefinition;
+
+    /**
+     * @return FieldDefinition
+     */
+    public function getField(): FieldDefinition;
 
     /**
      * @return bool
