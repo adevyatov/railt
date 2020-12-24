@@ -79,8 +79,8 @@ class Application extends Container implements ApplicationInterface
         parent::__construct($container);
         $this->cache = $cache;
 
-        $this->registerBaseBindings($debug);
         $this->registerCache($debug);
+        $this->registerBaseBindings($debug);
     }
 
     /**
